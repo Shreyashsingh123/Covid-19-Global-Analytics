@@ -3,11 +3,19 @@ from pyspark.sql.functions import col, round, sum as _sum, desc, when
 
 
 spark = SparkSession.builder.appName("Task3-DeathPercentageAnalytics").getOrCreate()
-# Read Parquet Files (from staging)
-spark.read.parquet("hdfs://localhost:9000/data/covid/staging/Covid_dataset/full_grouped")
-worldometer = spark.read.parquet("hdfs://localhost:9000/data/covid/staging/Covid_dataset/worldometer_data")
 
-# 1️ Daily Death Percentage per Country
+# Read Parquet Files (from staging)
+
+full_grouped = spark.read.parquet(
+    "hdfs://localhost:9000/data/covid/staging/Covid_dataset/full_grouped"
+)
+
+worldometer = spark.read.parquet(
+    "hdfs://localhost:9000/data/covid/staging/Covid_dataset/worldometer_data"
+)
+
+
+# 1️⃣ Daily Death Percentage per Country
 # Formula: (Deaths / Confirmed) * 100
 
 daily_country = full_grouped.withColumn(
@@ -21,8 +29,10 @@ daily_country = full_grouped.withColumn(
 )
 
 daily_country.write.mode("overwrite").parquet(
-    "hdfs://localhost:9000/data/covid/analytics/daily_country_death_percentage"
+    "hdfs://localhost:9000/data/covid/analytics/Covid_dataset/daily_country_death_percentage"
 )
+
+
 # 2️ Global Daily Death Percentage
 
 global_daily = full_grouped.groupBy("Date").agg(
@@ -39,8 +49,9 @@ global_daily = full_grouped.groupBy("Date").agg(
 )
 
 global_daily.write.mode("overwrite").parquet(
-    "hdfs://localhost:9000/data/covid/analytics/global_daily_death_percentage"
+    "hdfs://localhost:9000/data/covid/analytics/Covid_dataset/global_daily_death_percentage"
 )
+
 
 # 3️ Continent-wise Death Percentage
 
@@ -50,9 +61,10 @@ wm = worldometer.alias("wm")
 
 continent_df = fg.join(
     wm,
-    col("fg.`Country/Region`") == col("wm.`Country/Region`"),
+    col("fg.`Country_Region`") == col("wm.`Country_Region`"),
     "left"
 )
+
 
 continent_death = continent_df.groupBy(
     col("wm.Continent")
@@ -70,11 +82,13 @@ continent_death = continent_df.groupBy(
 )
 
 continent_death.write.mode("overwrite").parquet(
-    "hdfs://localhost:9000/data/covid/analytics/continent_death_percentage"
+    "hdfs://localhost:9000/data/covid/analytics/Covid_dataset/continent_death_percentage"
 )
+
+
 # 4️ Country with Highest Overall Death Percentage
 
-country_highest = full_grouped.groupBy("Country/Region").agg(
+country_highest = full_grouped.groupBy("Country_Region").agg(
     _sum("Deaths").alias("Total_Deaths"),
     _sum("Confirmed").alias("Total_Confirmed")
 ).withColumn(
@@ -88,13 +102,14 @@ country_highest = full_grouped.groupBy("Country/Region").agg(
 ).orderBy(desc("Death_Percentage")).limit(1)
 
 country_highest.write.mode("overwrite").parquet(
-    "hdfs://localhost:9000/data/covid/analytics/highest_death_percentage_country"
+    "hdfs://localhost:9000/data/covid/analytics/Covid_dataset/highest_death_percentage_country"
 )
+
 # 5️ Top 10 Countries by Deaths Per Capita
 # Formula: Total Deaths / Population
 
 country_totals = continent_df.groupBy(
-    col("fg.`Country/Region`"),
+    col("fg.`Country_Region`"),
     col("wm.Population")
 ).agg(
     _sum(col("fg.Deaths")).alias("Total_Deaths")
@@ -111,7 +126,8 @@ top10_per_capita = country_totals.withColumn(
 ).orderBy(desc("Deaths_Per_Capita")).limit(10)
 
 top10_per_capita.write.mode("overwrite").parquet(
-    "hdfs://localhost:9000/data/covid/analytics/top10_deaths_per_capita"
+    "hdfs://localhost:9000/data/covid/analytics/Covid_dataset/top10_deaths_per_capita"
 )
+
 # Stop Spark
 spark.stop()

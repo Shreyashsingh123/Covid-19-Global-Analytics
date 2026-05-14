@@ -4,7 +4,7 @@ from pyspark.sql.functions import col,round,when,sum as _sum,desc
 spark = SparkSession.builder.appName("Task4-InfectionRateAnalytics").getOrCreate()
 
 
-worldometer=spark.read.parquet("hdfs://localhost:9000/data/covid/staging/Covid_dataset/worldometer_data.parquet")
+worldometer=spark.read.parquet("hdfs://localhost:9000/data/covid/staging/Covid_dataset/worldometer_data")
 
 # confirm case per thousand population
 # worldometer.show(1)
@@ -47,7 +47,7 @@ top_infection_rate.write.mode("overwrite").parquet("hdfs://localhost:9000/data/c
 top_infection_rate.show(10)
 
 #who region infectin ranking
-who_infection=infect_df.groupBy("WHO Region").agg(
+who_infection=infect_df.groupBy("WHO_Region").agg(
     _sum("TotalCases").alias("Total_Confirmed"),
     _sum("Population").alias("Total_Population")
 ).withColumn(
