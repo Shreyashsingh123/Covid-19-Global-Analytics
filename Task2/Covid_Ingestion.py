@@ -3,8 +3,8 @@ from pyspark.sql.types import *
 
 spark=SparkSession.builder.appName("CovidIngestion").getOrCreate()
 
-raw_path="hdfs://localhost:9000/data/covid/raw/Covid_dataset"
-staging_path="hdfs://localhost:9000/data/covid/staging/Covid_dataset"
+raw_path="hdfs://localhost:9000/data/covid/raw/Covid_dataset/"
+staging_path="hdfs://localhost:9000/data/covid/staging/Covid_dataset/"
 
 schema=StructType([
     StructField("Date", StringType(), True),
